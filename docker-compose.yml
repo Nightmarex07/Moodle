@@ -1,0 +1,92 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: moodle-ai-backend
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: moodle-ai-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-moodle_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-moodle_ai}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-moodle_ai_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-moodle_ai} -d ${POSTGRES_DB:-moodle_ai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  moodle:
+    # Bitnami images are no longer freely available on Docker Hub; using an open alternative.
+    image: erseco/alpine-moodle:latest
+    container_name: moodle-ai-moodle
+    depends_on:
+      moodledb:
+        condition: service_healthy
+    environment:
+      SITE_URL: ${MOODLE_SITE_URL:-http://localhost:8080}
+      MOODLE_USERNAME: ${MOODLE_USERNAME:-admin}
+      MOODLE_PASSWORD: ${MOODLE_PASSWORD:-Admin123!}
+      MOODLE_EMAIL: ${MOODLE_EMAIL:-admin@example.com}
+      DB_TYPE: mariadb
+      DB_HOST: moodledb
+      DB_PORT: 3306
+      DB_NAME: ${MOODLE_DB_NAME:-moodle}
+      DB_USER: ${MOODLE_DB_USER:-moodle}
+      DB_PASS: ${MOODLE_DB_PASSWORD:-moodle_password}
+    ports:
+      - "8080:8080"
+    volumes:
+      - moodle_data:/var/www/moodledata
+      - ./moodle-plugin/local/ai_assistant:/var/www/html/local/ai_assistant
+      - ./moodle-plugin/local/ai_assistant:/var/www/html/public/local/ai_assistant
+
+  moodledb:
+    image: mariadb:11
+    container_name: moodle-ai-moodledb
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --skip-character-set-client-handshake
+    environment:
+      MARIADB_DATABASE: ${MOODLE_DB_NAME:-moodle}
+      MARIADB_USER: ${MOODLE_DB_USER:-moodle}
+      MARIADB_PASSWORD: ${MOODLE_DB_PASSWORD:-moodle_password}
+      MARIADB_ROOT_PASSWORD: ${MOODLE_DB_ROOT_PASSWORD:-root_password}
+    volumes:
+      - moodledb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "healthcheck.sh --connect --innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: moodle-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  moodle_data:
+  moodledb_data:
+  redis_data:

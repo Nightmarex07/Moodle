@@ -1,0 +1,27 @@
+<div id="local-ai-assistant-root" class="local-ai-assistant-root"
+     data-courseid="{{courseid}}"
+     data-proxyurl="{{proxyurl}}"
+     data-sesskey="{{sesskey}}"
+     data-userid="{{userid}}"
+     data-userrole="{{userrole}}">
+  <button type="button" class="local-ai-assistant-fab" id="local-ai-assistant-fab" aria-label="{{openchat}}" title="{{openchat}}">
+    <span class="local-ai-assistant-fab-icon">✦</span>
+  </button>
+
+  <div class="local-ai-assistant-panel hidden" id="local-ai-assistant-panel" role="dialog" aria-label="{{title}}">
+    <div class="local-ai-assistant-header">
+      <div class="local-ai-assistant-header-text">
+        <div class="local-ai-assistant-title">{{title}}</div>
+        <div class="local-ai-assistant-subtitle">{{subtitle}}</div>
+      </div>
+      <button type="button" class="local-ai-assistant-close" id="local-ai-assistant-close" aria-label="Close">×</button>
+    </div>
+    <div class="local-ai-assistant-messages" id="local-ai-assistant-messages">
+      <div class="local-ai-assistant-msg system">{{disclaimer}}</div>
+    </div>
+    <form class="local-ai-assistant-form" id="local-ai-assistant-form">
+      <input type="text" id="local-ai-assistant-input" placeholder="{{placeholder}}" autocomplete="off" />
+      <button type="submit" aria-label="{{send}}">{{send}}</button>
+    </form>
+  </div>
+</div>
